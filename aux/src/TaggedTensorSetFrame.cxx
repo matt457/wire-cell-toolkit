@@ -1,4 +1,5 @@
 #include "WireCellAux/TaggedTensorSetFrame.h"
+#include "WireCellAux/TensUtil.h"
 #include "WireCellIface/SimpleTrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellUtil/NamedFactory.h"
@@ -21,9 +22,11 @@ void Aux::TaggedTensorSetFrame::configure(const WireCell::Configuration& config)
 {
     m_tags.clear();
     for (auto jten : config["tensors"]) {
+        // no tag means empty tag
         m_tags.insert(get<std::string>(jten, "tag", ""));
     }
 }
+
 
 bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_pointer& out)
 {
@@ -32,69 +35,93 @@ bool Aux::TaggedTensorSetFrame::operator()(const input_pointer& in, output_point
         return true;
     }
     
+    auto log = Log::logger("tens");
+
     auto traces = new std::vector<ITrace::pointer>;
 
-    auto md = in->metadata();
-    auto jtens = md["tensors"];
+    auto set_md = in->metadata();
+    auto jtags = set_md["tags"];
 
-    size_t ntens = jtens.size();
-    for (size_t iten=0; iten<ntens; ++iten) {
+    // Have to make a frame before setting its summaries
+    struct SummaryCache {
+        std::string tag;
+        IFrame::trace_list_t indices;
+        IFrame::trace_summary_t summary;
+    };
+    std::vector<SummaryCache> summaries;
+    size_t index_start = 0;
 
-        auto jten = jtens[(int)iten];
-        std::string tag = get<std::string>(jten, "tag", "");
+
+    for (auto jtag : jtags) {
+        std::string tag = jtag.asString();
         if (m_tags.find(tag) == m_tags.end()) {
-            continue;           // we don't want this one
+            log->debug("Tensor->Frame: skipping unwanted tag {}", tag);
+            continue;
         }
 
-        auto ten = in->tensors()->at(iten);
-        auto shape = ten->shape();
-        size_t nchans = shape[0];
-        size_t nticks = shape[1];
-        int tbin = get<int>(jten, "tbin", 0);
+        auto wf_ten = Aux::get_tens(in, tag, "waveform");
+        if (!wf_ten) {
+            log->warn("Tensor->Frame: failed to get waveform tensor for tag {}", tag);
+            continue;
+        }
+
+        auto ch_ten = Aux::get_tens(in, tag, "channels");
+        if (!ch_ten) {
+            log->warn("Tensor->Frame: failed to get channels tensor for tag {}", tag);
+            continue;
+        }
+
+        auto sum_ten = Aux::get_tens(in, tag, "summary");
+        if (!sum_ten) {
+            log->debug("Tensor->Frame: no optional summary tensor for tag {}", tag);
+        }
         
-        Eigen::Map<const Eigen::ArrayXXf> arr((const float*)ten->data(), nchans, nticks);
-        auto jchans = jten["channels"];
+
+        auto wf_shape = wf_ten->shape();
+        size_t nchans = wf_shape[0];
+        size_t nticks = wf_shape[1];
+        int tbin = get<int>(wf_ten->metadata(), "tbin", 0);
+        log->debug("Tensor->Frame: '{}': {} chans x {} ticks", tag, nchans, nticks);
+
+        Eigen::Map<const Eigen::ArrayXXf> wf_arr((const float*)wf_ten->data(), nchans, nticks);
+        Eigen::Map<const Eigen::ArrayXi> ch_arr((const int*)ch_ten->data(), nchans);
+
         for (size_t ind=0; ind<nchans; ++ind) {
-            SimpleTrace* st = new SimpleTrace(jchans[(int)ind].asInt(), tbin, nticks);
+            SimpleTrace* st = new SimpleTrace(ch_arr[ind], tbin, nticks);
             auto& q = st->charge();
             for (size_t itick=0; itick<nticks; ++itick) {
-                q[itick] = arr(ind,itick);
+                q[itick] = wf_arr(ind,itick);
             }
+            //log->debug("Tensor->Frame: #{}: ch: {}, q: {} filled {}", ind, ch_arr[ind], q.size(), nticks);
             traces->push_back(ITrace::pointer(st));
         }
-    }
 
-    SimpleFrame* frame = 
-        new SimpleFrame(get(md, "ident", 0),
-                        get(md, "time", 0.0),
-                        ITrace::shared_vector(traces),
-                        get(md, "tick", 0.5*units::microsecond));
-
-    // Do second pass for tagged indices and summary...
-    for (size_t iten=0; iten<ntens; ++iten) {
-
-        auto jten = jtens[(int)iten];
-        std::string tag = get<std::string>(jten, "tag", "");
-        if (m_tags.find(tag) == m_tags.end()) {
-            continue;           // we don't want this one
-        }
-
-        IFrame::trace_summary_t summary;
-        auto jsum = jten["summary"];
-        if (jsum.size()) {
-            for (auto js : jsum) {
-                summary.push_back(js.asFloat());
-            }
-        }
-
-        auto jchans = jten["channels"];
-        size_t nchans = jchans.size();
-        const size_t index_start = traces->size();
         IFrame::trace_list_t indices;
         for (size_t ind=0; ind<nchans; ++ind) {
             indices.push_back(index_start + ind);
         }
-        frame->tag_traces(tag, indices, summary);
+        index_start += nchans;
+
+        IFrame::trace_summary_t summary;
+        if (sum_ten) {
+            Eigen::Map<const Eigen::ArrayXd> sum_arr((const double*)sum_ten->data(), nchans);
+            summary.resize(nchans);
+            for (size_t ind=0; ind<nchans; ++ind) {
+                summary[ind] = sum_arr(ind);
+            }
+        }
+
+        summaries.emplace_back(SummaryCache{tag, indices, summary});
+    }
+
+    SimpleFrame* frame = 
+        new SimpleFrame(get(set_md, "ident", 0),
+                        get(set_md, "time", 0.0),
+                        ITrace::shared_vector(traces),
+                        get(set_md, "tick", 0.5*units::microsecond));
+
+    for (auto& s : summaries) {
+        frame->tag_traces(s.tag, s.indices, s.summary);
     }
 
     out = IFrame::pointer(frame);

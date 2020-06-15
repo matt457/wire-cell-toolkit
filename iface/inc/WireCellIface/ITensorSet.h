@@ -14,7 +14,7 @@ namespace WireCell {
         /// Return some identifier number that is unique to this set.
         virtual int ident() const = 0;
 
-        /// Optional metadata associated with the tensors
+        /// Optional metadata associated with the set of tensors
         virtual Configuration metadata() const {
             return Configuration();
         }

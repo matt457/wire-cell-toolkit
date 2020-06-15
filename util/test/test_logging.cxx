@@ -2,6 +2,7 @@
 #include "WireCellUtil/Logging.h"
 
 #include <string>
+#include <chrono>
 
 using namespace WireCell;
 
@@ -51,6 +52,16 @@ int main(int argc, char* argv[])
 
     //SPDLOG_LOGGER_DEBUG(l, "log from debug CPP macro");
     //SPDLOG_LOGGER_TRACE(l, "log from trace CPP macro, should not see by default");
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    const int nlookups = 100000;
+    for (int count=0; count < nlookups; ++count) {
+        auto l = Log::logger("lookup");
+    }
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0);
+    spdlog::info("{} in {} us, {:.3f} MHz",
+                 nlookups, us.count(), double(nlookups)/us.count());
 
     return 0;
 }

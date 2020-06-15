@@ -119,7 +119,7 @@ base {
     },
 
     files: {
-        wires: "icarus-wires-dualanode.json.bz2",
+        wires: "icarus-wires-dualanode-v2.json.bz2",
 
         fields: ["garfield-icarus-fnal-commissioning.json.bz2"],
 

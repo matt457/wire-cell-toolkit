@@ -7,6 +7,7 @@
 #define WIRECELL_ITENSOR
 
 #include "WireCellIface/IData.h"
+#include "WireCellUtil/Configuration.h"
 #include <vector>
 #include <cstddef>              // std::byte
 #include <typeinfo>
@@ -23,7 +24,7 @@ namespace WireCell {
         typedef std::vector<size_t> order_t;
 
         /// The type of the element.
-        virtual std::type_index element_type() const = 0;
+        virtual const std::type_info& element_type() const = 0;
         /// The size in bytes of an element
         virtual size_t element_size() const = 0;
 
@@ -41,6 +42,10 @@ namespace WireCell {
         /// word size
         virtual size_t size() const = 0;
 
+        /// Optional metadata associated with the tensor
+        virtual Configuration metadata() const {
+            return Configuration();
+        }
     };
 }
 

@@ -72,16 +72,19 @@ Log::logptr_t Log::logger(std::string name)
 {
     wct_base_logger();          // make sure base logger is installed.
     auto l = spdlog::get(name);
-    if (!l) {
-        auto& sinks = wct_base_logger()->sinks();
-        l = std::make_shared<spdlog::logger>(name,  sinks.begin(), sinks.end());
+    if (l) { return l; }
 
-        // peak under the hood of spdlog.  We want shared loggers to
-        // get configured with the default level.
+    auto& sinks = wct_base_logger()->sinks();
+    l = std::make_shared<spdlog::logger>(name,  sinks.begin(), sinks.end());
+
+    // peak under the hood of spdlog.  We want shared loggers to
+    // get configured with the default level.
+    try {
         spdlog::details::registry::instance().initialize_logger(l);
-        if (!spdlog::get(name)) {
-            spdlog::register_logger(l);
-        }
+        spdlog::register_logger(l);
+    }
+    catch (spdlog::spdlog_ex& err) {
+        return spdlog::get(name);
     }
 
     return l;

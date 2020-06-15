@@ -7,40 +7,53 @@
 namespace WireCell {
     namespace Aux {
 
-        /*! Produce a set of 2D tensors and metadata from a frame.
+        /*! Produce a tensors and metadata from a frame with tags.
+         *
+         * The resulting waveform tensors are dense and thus represent
+         * an information loss in the case of a sparse frame.
          *
          * The inverse converter is @ref TaggedTensorSetFrame.
          *
          * The converter configuration consists of an object
          * containing an attribute "tensors" that holds an array of
-         * "tensor config objects".  Each object has the attributes:
+         * "tensor config objects", each of which has the attributes:
          *
-         * - tag :: the frame trace tag supplying the traces
-         * - pad :: number to pad sparse tensors (def=0.0)
+         * - tag :: the frame trace tag supplying the traces, optional, default='""'.
          *
-         * There will be one output tensor in the set per tensor
-         * config object in the "tensors" array.  If no matching
-         * tensor can be made the output tensor (pointer) will be null
-         * (and NOT a fully padded tensor).
-         * 
-         * Tensors are produced row-major (C-style) order with a row
-         * holding one waveform from one channel.  Sparse frames
-         * result in dense, padded tensors (padded with "pad" value,
-         * if given).  
+         * - pad :: number to pad sparse tensors, optional, default=0.0.
          *
-         * The ITensorSet also provides a metadata object with these
-         * attributes:
+         * Each element of the "tensors" configuration array, if the
+         * "tag" is found, results in multiple tensors on output.  If
+         * "tag" is not found, no tensors are output.
          *
-         * time - float, the frame's reference time  (in WCT s.o.u.)
-         * tick - float, the sample period (in WCT s.o.u.)
-         * tensors - a per-output tensor metadata object
+         * Each "tag" produces the following set of tensor types:
          *
-         * Each element of the latter forwards the attributes of the
-         * input tensor config object and sets these additional attributes:
+         * - waveform :: 2D float in channel (each row) X tick (each column)
+         * - channels :: 1D int, gives channel IDs for each row
+         * - summary :: 1D double, optional, gives a per-channel value
          *
-         * tbin - the time bin of the first column of the tensor
-         * channels - an array holding channel IDs associated with each row of the tensor.
-         * summary - an optional array, corresponding 1-to-2 with channels holding "channel summary" values.
+         * Waveform tensors are in row-major (C-style) order with a
+         * row holding one waveform from one channel.  Sparse frames
+         * result in dense, padded tensors (initialized with "pad"
+         * value to which input is summed).  Any overlapping traces
+         * are summed.
+         *
+         * The resulting ITensorSet also provides a metadata object
+         * with these metadata attributes:
+         *
+         * - time :: float, the frame's reference time  (in WCT's units)
+         * - tick :: float, the sample period (in WCT's units)
+         * - tags :: array of string, the tags saved
+         *
+         * Each tensor of a tag is saved with the following  metadata:
+         *
+         * - tag :: the corresponding tag
+         * - type :: a string indicate frame tensor type ("waveform", "channels", "summary")
+         *
+         * Additional metadata depending on type:
+         *
+         * - tbin :: ("waveform" type) the time bin of the first column of the tensor
+         * - pad :: the configured pad value
          * 
          */
         class TaggedFrameTensorSet

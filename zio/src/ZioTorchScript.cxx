@@ -5,8 +5,9 @@
 #include "WireCellAux/SimpleTensorSet.h"
 #include "WireCellAux/SimpleTensor.h"
 #include "WireCellIface/ITensorSet.h"
-#include "WireCellZio/FlowConfigurable.h"
 #include "WireCellUtil/Exceptions.h"
+
+#include "WireCellZio/TensUtil.h"
 
 #include "zio/domo/client.hpp"
 #include "zio/tens.hpp"
@@ -95,13 +96,13 @@ bool Pytorch::ZioTorchScript::operator()(const ITensorSet::pointer& in, ITensorS
     {
         try
         {
-            auto msg = Zio::FlowConfigurable::pack(in);
+            auto msg = Zio::pack(in);
             zmq::multipart_t mmsg(msg.toparts());
             m_client.send(get<std::string>(m_cfg, "service", "torch:dnnroi"), mmsg);
             mmsg.clear();
             m_client.recv(mmsg);
             msg.fromparts(mmsg);
-            out = Zio::FlowConfigurable::unpack(msg);
+            out = Zio::unpack(msg);
             
             success = true;
         }

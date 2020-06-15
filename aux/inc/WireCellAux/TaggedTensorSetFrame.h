@@ -19,9 +19,8 @@ namespace WireCell {
          * tag is used to locate the tensor to convert to a set of
          * tagged traces.
          *
-         * Note, traces on common channels between different tagged
-         * tensors are not deduplicated.  IOW, N rows across all the
-         * matching tensors turn into N traces in the output frame.
+         * Note, the set of traces are simply the contanation of all
+         * waveform tensors.  No deduplication is done.
          */
         class TaggedTensorSetFrame
             : public WireCell::IConfigurable

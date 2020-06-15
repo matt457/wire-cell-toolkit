@@ -1,0 +1,11 @@
+digraph testzioflowlinks {
+        rankdir=LR
+        node[shape=Mrecord]
+
+        giver[label="giver\n(client)|<o>givec\n(port)"]
+        middleman[label="<i>takes\n(port)|middleman\nforwards flow\n(server)|<o>gives\n(port)"]
+        taker[label="<i>takec\n(port)|taker\n(client)"]
+
+        giver:o -> middleman:i [label="flow (DAT)"]
+        taker:i -> middleman:o [label="flow (DAT)", dir=back]
+}

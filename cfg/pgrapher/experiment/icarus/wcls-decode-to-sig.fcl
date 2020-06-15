@@ -8,7 +8,9 @@ services:
                              @table::icarus_calibration_services
                              @table::icarus_wirecalibration_services
 }
-
+# explicitly set the split wire geometry 
+services.Geometry: @local::icarus_split_induction_nooverburden_geometry
+services.ExptGeoHelperInterface: @local::icarus_split_induction_geometry_helper
 
 source: {
    module_type: RootInput

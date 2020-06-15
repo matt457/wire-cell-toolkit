@@ -4,7 +4,26 @@ local g = import 'pgraph.jsonnet';
 
 {
     //  Return a list of channel by anode index [1-8]
-    anode_channels(n):: std.range(1056 * (n % 2) + 13312 * (n - n % 2) / 2, 1056 * (n % 2 + 1) - 1 + 13312 * (n - n % 2) / 2) + std.range(1056 * 2 + 13312 * (n - n % 2) / 2, 13312 - 1 + 13312 * (n - n % 2) / 2),
+    // "AnodePlane:anode110"
+    // "AnodePlane:anode120"
+    // "AnodePlane:anode111"
+    // "AnodePlane:anode121"
+    // "AnodePlane:anode112"
+    // "AnodePlane:anode122"
+    // "AnodePlane:anode113"
+    // "AnodePlane:anode123"
+    local startch = [ [0, 2400, 8128],
+                      [1152, 2400, 8128],
+                      [13824, 16192, 21984],
+                      [14976, 16192, 21984],
+                      [27648, 30048, 35776],
+                      [28800, 30048, 35776],
+                      [41472, 43840, 49632],
+                      [42624, 43840, 49632]
+                    ],
+    local wireplanes = [ 1055, 5599, 5599 ],
+    anode_channels(n):: std.flattenArrays([std.range(startch[n][w], startch[n][w]+wireplanes[w]) for w in std.range(0,2)]),
+    // anode_channels(n):: std.range(1056 * (n % 2) + 13312 * (n - n % 2) / 2, 1056 * (n % 2 + 1) - 1 + 13312 * (n - n % 2) / 2) + std.range(1056 * 2 + 13312 * (n - n % 2) / 2, 13312 - 1 + 13312 * (n - n % 2) / 2),
 
     // Return the number of split (1 or 2) for an anode
     anode_split(ident):: (ident%100 - ident%10)/10,

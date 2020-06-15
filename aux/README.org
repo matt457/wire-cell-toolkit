@@ -1,0 +1,17 @@
+
+#+title: Wire-Cell Toolkit Auxiliary 
+
+This core WCT package enjoys a special position in the dependency
+tree.  It depends on ~WireCellIface~ as do other "implementation"
+packages.  But, unlike the others that do not have any compile time
+inter-dependencies, the other "implementation" packages may have
+compile time dependency on ~WireCellAux~.
+
+Some categories of code appropriate for ~aux~:
+
+- general purpose implementation of ~IData~ interfaces (eg the ~Simple*~ classes)
+- ~INode~ implementations that provide general purpose data converters (eg, ~ITensorSet <--> IFrame~)
+- general utility code that operate on interfaces (eg, ~FrameTools~)
+
+
+

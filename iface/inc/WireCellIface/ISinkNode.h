@@ -29,6 +29,7 @@ namespace WireCell {
     {
     public:
 	typedef InputType input_type;
+	typedef ISinkNode<InputType> signature_type;
 	typedef std::shared_ptr<const InputType> input_pointer;
 
 	virtual ~ISinkNode() {}
@@ -37,6 +38,10 @@ namespace WireCell {
 	    const input_pointer& in = boost::any_cast<const input_pointer&>(anyin);
 	    return (*this)(in);
 	}
+
+        virtual std::string signature() {
+            return typeid(signature_type).name();
+        }
 
 	/// The calling signature:
 	virtual bool operator()(const input_pointer& in) = 0;

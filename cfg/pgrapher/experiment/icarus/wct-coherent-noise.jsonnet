@@ -1,6 +1,6 @@
 // This is a main entry point for configuring a wire-cell CLI job to
 // simulate ICARUS.  It is simplest signal-only simulation with
-// one set of nominal field response function. 
+// one set of nominal field response function.
 
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
@@ -23,7 +23,7 @@ local stubby = {
 local tracklist = [
 
   {
-    time: 0 * wc.us, 
+    time: 0 * wc.us,
     charge: -5000, // 5000 e/mm
     ray: params.det.bounds,
   },
@@ -92,6 +92,19 @@ local add_noise = function(model, n) g.pnode({
     }}, nin=1, nout=1, uses=[model]);
 local noises = [add_noise(noise_model, n) for n in std.range(0,3)];
 
+local add_coherent_noise = function(n) g.pnode({
+      type: "AddCoherentNoise",
+      name: "addcoherentnoise%d" %n,
+      data: {
+          spectra_file: params.files.coherent_noise,
+          rng: wc.tn(tools.random),
+          nsamples: params.daq.nticks,
+          random_fluctuation_amplitude: 0.1,
+          period: params.daq.tick,
+          normalization: 1
+      }}, nin=1, nout=1, uses=[]);
+local coherent_noises = [add_coherent_noise(n) for n in std.range(0,3)];
+
 // local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
 // "AnodePlane:anode110"
 // "AnodePlane:anode120"
@@ -115,12 +128,12 @@ local frame_summers = [
         },
     }, nin=2, nout=1) for n in std.range(0, 3)];
 
-local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
+local actpipes = [g.pipeline([noises[n], coherent_noises[n] ,digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,3)];
 local util = import 'pgrapher/experiment/icarus/funcs.jsonnet';
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin');
 
 
-local magoutput = 'icarus-sim-check.root';
+local magoutput = 'icarus-coherent_noise-check.root';
 local magnify = import 'pgrapher/experiment/icarus/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
@@ -167,7 +180,7 @@ local pipelines = [
     ];
 
 // local fanpipe = f.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'sn_mag_nf');
-local fanout_tag_rules = [ 
+local fanout_tag_rules = [
           {
             frame: {
               '.*': 'orig%d' % tools.anodes[n].data.ident,

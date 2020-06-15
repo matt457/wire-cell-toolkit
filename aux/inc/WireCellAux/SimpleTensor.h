@@ -15,7 +15,9 @@ namespace WireCell {
 
             SimpleTensor(const shape_t& shape) {
                 size_t nbytes = element_size();
-                for (const auto& s: shape) { nbytes *= s; }
+                for (const auto& s: shape) {
+                    nbytes *= s;
+                }
                 m_store.resize(nbytes);
                 m_shape = shape;
             }
@@ -32,10 +34,11 @@ namespace WireCell {
              md[1][2][3] = 42.0;
             */
             std::vector<std::byte>& store() { return m_store; }
+            Configuration& metadata() { return m_md; }
 
 
             // ITensor const interface.
-            virtual std::type_index element_type() const {
+            virtual const std::type_info& element_type() const {
                 return typeid(element_t);
             }
             virtual size_t element_size() const {
@@ -53,10 +56,14 @@ namespace WireCell {
                 return m_store.size();
             }
 
+            virtual Configuration metadata() const {
+                return m_md;
+            }
+
         private:
             std::vector<std::byte> m_store;
             std::vector<size_t> m_shape;
-
+            Configuration m_md;
         };
     }
 }

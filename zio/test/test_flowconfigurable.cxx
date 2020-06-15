@@ -3,6 +3,7 @@
  */
 #include "WireCellUtil/Testing.h"
 #include "WireCellZio/FlowConfigurable.h"
+#include "WireCellZio/TensUtil.h"
 #include "WireCellIface/SimpleTrace.h"
 #include "WireCellIface/SimpleFrame.h"
 #include "WireCellAux/SimpleTensor.h"
@@ -42,6 +43,7 @@ ITensorSet::pointer make_tensorset() {
 void print(const ITensor::pointer tens) {
     float* data = (float*) tens->data();
     for(size_t x1=0; x1<tens->shape()[0]; ++x1) {
+        std::cout << "[" << x1 << "]: ";
         for(size_t x2=0; x2<tens->shape()[1]; ++x2) {
             std::cout << data[x2*tens->shape()[0]+x1] << " ";
         }
@@ -59,11 +61,11 @@ int main() {
     print(input->tensors()->front());
 
     std::cout << "\n======== zio::Message ========\n";
-    auto msg = Zio::FlowConfigurable::pack(input);
+    auto msg = Zio::pack(input);
     std::cout << msg.label() << std::endl;
 
     std::cout << "\n======== output ITensorSet ========\n";
-    auto out = Zio::FlowConfigurable::unpack(msg);
+    auto out = Zio::unpack(msg);
     std::cout << jwriter.write(out->metadata());
     print(out->tensors()->front());
 
