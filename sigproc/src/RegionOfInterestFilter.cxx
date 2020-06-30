@@ -100,6 +100,7 @@ bool RegionOfInterestFilter::operator()(const input_pointer& inframe, output_poi
     int ch_ind = 0; // channel indexer
     int num_store_ch[charges_size] = {}; // number of upper channels to store ROI info per bin (initialized to 0)
     int peak_bin_flag[2][charges_size]; // peak_bin_flag[0][i] is curr ch peak flag in ith bin, peak_bin_flag[1] is prev ch
+    int my_test_flag = 0;
 
     // Store ROI in ROI_array
     for (auto trace : *traces.get())
@@ -115,7 +116,7 @@ bool RegionOfInterestFilter::operator()(const input_pointer& inframe, output_poi
         std::nth_element(chargessort.begin(), chargessort.begin() + chargessort.size()/2, chargessort.end());
         float median = chargessort[chargessort.size()/2];
 
-        log->debug("RegionOfInterestFilter: channel {}, initial time {}, size {}", channel, tbin, (int)charges.size());  
+        //log->debug("RegionOfInterestFilter: channel {}, initial time {}, size {}", channel, tbin, (int)charges.size());  
 
         // Time ROI
         for (int bin = 0; bin < (int)charges.size(); ++bin)
@@ -126,7 +127,7 @@ bool RegionOfInterestFilter::operator()(const input_pointer& inframe, output_poi
           if(central_value<-PEAK or central_value>PEAK)
           {
 
-            log->debug("RegionOfInterestFilter: peak in the bin {} = {}, median {}, Cvalue {}, ispeak {}", bin, charges[bin], median, central_value, ispeak(charges[bin]) );
+            //log->debug("RegionOfInterestFilter: peak in the bin {} = {}, median {}, Cvalue {}, ispeak {}", bin, charges[bin], median, central_value, ispeak(charges[bin]) );
           	for(int delta = -ROI; delta < ROI; ++delta)
           	{
         	    int newbin = bin+delta;
@@ -141,7 +142,7 @@ bool RegionOfInterestFilter::operator()(const input_pointer& inframe, output_poi
 
 
         // Channel ROI
-        if(ch_ind>0)
+        if(ch_ind>0 and my_test_flag)
         {
           for(int bin=0; bin<(int)newcharge.size(); bin++)
           {
@@ -258,21 +259,21 @@ bool RegionOfInterestFilter::operator()(const input_pointer& inframe, output_poi
 
     outframe = IFrame::pointer(sframe);
 
-    auto checktraces = outframe->traces();
+    //auto checktraces = outframe->traces();
 
-    for (auto checktrace : *checktraces.get())
-    {
-        int channel = checktrace->channel();
-        int tbin = checktrace->tbin();
-        auto const& charges = checktrace->charge();
+    //for (auto checktrace : *checktraces.get())
+    //{
+    //    int channel = checktrace->channel();
+    //    int tbin = checktrace->tbin();
+    //    auto const& charges = checktrace->charge();
 
-        log->debug("RegionOfInterestFilter: newtraces channel {}, start time {}, size {}", channel, tbin,(int)charges.size());
-
-        for (int bin = 0; bin < (int)charges.size(); ++bin)
-        {
-          log->debug("RegionOfInterestFilter: newtrace bin {} value = {}", bin, charges[bin] );
-        }
-    }
+    //    log->debug("RegionOfInterestFilter: newtraces channel {}, start time {}, size {}", channel, tbin,(int)charges.size());
+    
+    //    for (int bin = 0; bin < (int)charges.size(); ++bin)
+    //    {
+    //      log->debug("RegionOfInterestFilter: newtrace bin {} value = {}", bin, charges[bin] );
+    //    }
+    //}
 
     // outframe = IFrame::pointer(sframe);
     log->debug("RegionOfInterestFilter: end operator");
