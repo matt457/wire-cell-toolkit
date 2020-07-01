@@ -215,7 +215,7 @@ bool RegionOfInterestFilter::operator()(const input_pointer& inframe, output_poi
 
     outframe = IFrame::pointer(sframe);
 
-    auto checktraces = outframe->traces();
+    //auto checktraces = outframe->traces();
 
     // for (auto checktrace : *checktraces.get())
     // {
